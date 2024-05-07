@@ -56,7 +56,7 @@ public class HospitalRepository : IHospitalRepository
         {
             sqlCommand.CommandText = $"SELECT count(*) FROM Patient WHERE Id = @parientID ";
             sqlCommand.Parameters.AddWithValue("@parientID", dto.patientId);
-            var count = (int) sqlCommand.ExecuteScalar();
+            var count = (int)(await sqlCommand.ExecuteScalarAsync());
             if (count != 1)
             {
                 throw new Exception("404P");
@@ -64,7 +64,7 @@ public class HospitalRepository : IHospitalRepository
             
             sqlCommand.CommandText = $"SELECT count(*) FROM Doctor WHERE Id = @doctorID ";
             sqlCommand.Parameters.AddWithValue("@doctorID", dto.doctorId);
-            count = (int) sqlCommand.ExecuteScalar();
+            count = (int)(await sqlCommand.ExecuteScalarAsync());
             if (count != 1)
             {
                 throw new Exception("404D");
@@ -73,7 +73,7 @@ public class HospitalRepository : IHospitalRepository
             int medicationID = 0;
             sqlCommand.CommandText = $"SELECT Id FROM Medicine WHERE Name = @medicine ";
             sqlCommand.Parameters.AddWithValue("@medicine", dto.medicine);
-            var responce =  sqlCommand.ExecuteScalar();
+            var responce =  (await sqlCommand.ExecuteScalarAsync());
             
             if (responce == null || responce == DBNull.Value)
             {
@@ -93,7 +93,7 @@ public class HospitalRepository : IHospitalRepository
             sqlCommand.Parameters.AddWithValue("@amount", dto.amount);
             sqlCommand.Parameters.AddWithValue("@date", DateTime.Now);
             
-            sqlCommand.ExecuteNonQuery();
+            await sqlCommand.ExecuteNonQueryAsync();
             
 
             // sqlCommand.ExecuteScalar(); //To get id ro count
