@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Test2.Models.DTOs;
 using Test2.Services;
 
 namespace Test2.Controllers;
@@ -23,11 +24,21 @@ public class PrescriptonsController : ControllerBase
     /// HttpPut - Update Data
     /// HttpDelete - Selete Data
 
-    [HttpPost("api/")]
-    public async Task<IActionResult> Get()
+    [HttpPost("/api/prescriptons")]
+    public async Task<IActionResult> AddNewPrescritpion(Prescription dto)
     {
-        //var a = await _service.GetAsync();
-        return Ok();
+        var a = await _service.AddNewPrescritpion(dto);
+        switch (a)
+        {
+           case "404D":
+               return NotFound("Doctor not Found");
+           case "404P":
+               return NotFound("Patient not Found");
+           case "400":
+               return BadRequest("Amount is has to be biger then 0");
+               
+        }
+        return Ok("Prescription was added");
     }
     
     

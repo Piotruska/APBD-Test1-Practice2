@@ -1,6 +1,7 @@
 using System.Data.Common;
 using Microsoft.Data.SqlClient;
 using Test2.Models;
+using Test2.Models.DTOs;
 
 namespace Test2.Repositories;
 
@@ -40,10 +41,11 @@ public class HospitalRepository : IHospitalRepository
         return patients.Count == 0 ? null : patients;
     }
 
-    public async Task<object> SomeProcedure()
+    public async Task<string> AddNewPrescription(Prescription dto)
     {
         SqlConnection sqlConnection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
         SqlCommand sqlCommand = new SqlCommand();
+        sqlCommand.Connection = sqlConnection;
         
         await sqlConnection.OpenAsync();
 
@@ -52,10 +54,49 @@ public class HospitalRepository : IHospitalRepository
 
         try
         {
-            sqlCommand.CommandText = $"SELECT 1 FROM Patirnt ";
-            //sqlCommand.Parameters.AddWithValue("@paremeter", parameterPassed);
+            sqlCommand.CommandText = $"SELECT count(*) FROM Patient WHERE Id = @parientID ";
+            sqlCommand.Parameters.AddWithValue("@parientID", dto.patientId);
+            var count = (int) sqlCommand.ExecuteScalar();
+            if (count != 1)
+            {
+                throw new Exception("404P");
+            }
+            
+            sqlCommand.CommandText = $"SELECT count(*) FROM Doctor WHERE Id = @doctorID ";
+            sqlCommand.Parameters.AddWithValue("@doctorID", dto.doctorId);
+            count = (int) sqlCommand.ExecuteScalar();
+            if (count != 1)
+            {
+                throw new Exception("404D");
+            }
 
-            // sqlCommand.ExecuteScalar(); //To get id 
+            int medicationID = 0;
+            sqlCommand.CommandText = $"SELECT Id FROM Medicine WHERE Name = @medicine ";
+            sqlCommand.Parameters.AddWithValue("@medicine", dto.medicine);
+            var responce =  sqlCommand.ExecuteScalar();
+            
+            if (responce == null || responce == DBNull.Value)
+            {
+                sqlCommand.CommandText = $"Insert into Medicine(name) values (@medicine); " +
+                                         $"SELECT SCOPE_IDENTITY();";
+                var a = sqlCommand.ExecuteScalar();
+                medicationID = Convert.ToInt32(a);
+            }
+            else
+            {
+                medicationID = Convert.ToInt32(responce);
+            }
+            
+            sqlCommand.CommandText = $"Insert into Prescription(medicine_id, patient_id, doctor_id, amount, createdat)" +
+                                     $" values (@medicineID,@parientID,@doctorID,@amount,@date)";
+            sqlCommand.Parameters.AddWithValue("@medicineID", medicationID);
+            sqlCommand.Parameters.AddWithValue("@amount", dto.amount);
+            sqlCommand.Parameters.AddWithValue("@date", DateTime.Now);
+            
+            sqlCommand.ExecuteNonQuery();
+            
+
+            // sqlCommand.ExecuteScalar(); //To get id ro count
             // var reader = sqlCommand.ExecuteReader(); // to read a list of objects 
             // var affectedCount = sqlCommand.ExecuteNonQuery(); //when updating / deleting for example
 
@@ -69,6 +110,7 @@ public class HospitalRepository : IHospitalRepository
         catch (Exception e)
         {
             await transaction.RollbackAsync();
+            return e.Message;
         }
         
         sqlConnection.Dispose();
